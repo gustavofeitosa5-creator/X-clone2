@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+/* Custom scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #374151;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4B5563;
+}
+
+/* Remove default focus outlines and use custom ones */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #000000;
+  color: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Prevent text selection on interactive elements */
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Line clamp utility */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Smooth transitions for theme */
+* {
+  transition-property: background-color, border-color, color, opacity;
+  transition-timing-function: ease;
+  transition-duration: 150ms;
+}
+
+/* Override for transforms and layout to not transition */
+.notransition,
+.notransition * {
+  transition: none !important;
+}
