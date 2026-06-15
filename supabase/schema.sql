@@ -226,24 +226,52 @@ SET search_path = public
 AS $$
 DECLARE
   suggested_username TEXT;
+  provided_username TEXT;
 BEGIN
-  suggested_username := LOWER(
-    REGEXP_REPLACE(
-      SPLIT_PART(NEW.email, '@', 1),
-      '[^a-z0-9_]', '_', 'g'
-    )
-  );
-  -- Garante unicidade adicionando sufixo numérico se necessário
-  WHILE EXISTS (SELECT 1 FROM public.profiles WHERE username = suggested_username) LOOP
-    suggested_username := suggested_username || FLOOR(RANDOM() * 9000 + 1000)::TEXT;
-  END LOOP;
+  -- Tenta obter o username fornecido pelo usuário
+  provided_username := LOWER(TRIM(NEW.raw_user_meta_data->>'username'));
+  
+  IF provided_username IS NOT NULL AND provided_username != '' THEN
+    -- Verifica se o username é válido (apenas letras, números e underscore)
+    IF provided_username ~ '^[a-z0-9_]+$' THEN
+      suggested_username := provided_username;
+      -- Garante unicidade adicionando sufixo numérico se necessário
+      WHILE EXISTS (SELECT 1 FROM public.profiles WHERE username = suggested_username) LOOP
+        suggested_username := suggested_username || FLOOR(RANDOM() * 9000 + 1000)::TEXT;
+      END LOOP;
+    ELSE
+      -- Username inválido, gera baseado no email
+      suggested_username := LOWER(
+        REGEXP_REPLACE(
+          SPLIT_PART(NEW.email, '@', 1),
+          '[^a-z0-9_]', '_', 'g'
+        )
+      );
+      WHILE EXISTS (SELECT 1 FROM public.profiles WHERE username = suggested_username) LOOP
+        suggested_username := suggested_username || FLOOR(RANDOM() * 9000 + 1000)::TEXT;
+      END LOOP;
+    END IF;
+  ELSE
+    -- Nenhum username fornecido, gera baseado no email
+    suggested_username := LOWER(
+      REGEXP_REPLACE(
+        SPLIT_PART(NEW.email, '@', 1),
+        '[^a-z0-9_]', '_', 'g'
+      )
+    );
+    -- Garante unicidade adicionando sufixo numérico se necessário
+    WHILE EXISTS (SELECT 1 FROM public.profiles WHERE username = suggested_username) LOOP
+      suggested_username := suggested_username || FLOOR(RANDOM() * 9000 + 1000)::TEXT;
+    END LOOP;
+  END IF;
 
   INSERT INTO public.profiles (id, username, display_name)
   VALUES (
     NEW.id,
     suggested_username,
     COALESCE(NEW.raw_user_meta_data->>'full_name', SPLIT_PART(NEW.email, '@', 1))
-  );
+  )
+  ON CONFLICT (id) DO UPDATE SET username = EXCLUDED.username;
   RETURN NEW;
 END;
 $$;
